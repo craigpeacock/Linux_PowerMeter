@@ -42,23 +42,24 @@
 #define CURRENT_LSB 	0.000015625
 #define SHUNT_CAL	1024
 
-void ina228_init(uint32_t i2c_master_port)
+void ina228_init(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
-	i2c_write_short(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_CONFIG, 0x8000);	// Reset
+	i2c_write_short(i2c_master_port, i2c_slave_addr, INA228_CONFIG, 0x8000);	// Reset
 
-	printf("Manufacturer ID:    0x%04X\r\n",i2c_read_short(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_MANUFACTURER_ID));
-	printf("Device ID:          0x%04X\r\n",i2c_read_short(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_DEVICE_ID));
+	printf("Manufacturer ID: 0x%04X\r\n",i2c_read_short(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_MANUFACTURER_ID));
+	printf("Device ID:       0x%04X\r\n",i2c_read_short(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_DEVICE_ID));
 
-	i2c_write_short(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_SHUNT_CAL, SHUNT_CAL);
+	i2c_write_short(i2c_master_port, i2c_slave_addr, INA228_SHUNT_CAL, SHUNT_CAL);
+	printf("\r\n");
 }
 
-float ina228_voltage(uint32_t i2c_master_port)
+float ina228_voltage(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	int32_t iBusVoltage;
 	float fBusVoltage;
 	bool sign;
 
-	i2c_read_buf(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_VBUS, (uint8_t *)&iBusVoltage, 3);
+	i2c_read_buf(i2c_master_port, i2c_slave_addr, INA228_VBUS, (uint8_t *)&iBusVoltage, 3);
 	sign = iBusVoltage & 0x80;
 	iBusVoltage = bswap_32(iBusVoltage & 0xFFFFFF) >> 12;
 	if (sign) iBusVoltage += 0xFFF00000;
@@ -67,24 +68,24 @@ float ina228_voltage(uint32_t i2c_master_port)
 	return (fBusVoltage);
 }
 
-float ina228_dietemp(uint32_t i2c_master_port)
+float ina228_dietemp(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	uint16_t iDieTemp;
 	float fDieTemp;
 
-	iDieTemp = i2c_read_short(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_DIETEMP);
+	iDieTemp = i2c_read_short(i2c_master_port, i2c_slave_addr, INA228_DIETEMP);
 	fDieTemp = (iDieTemp) * 0.0078125;
 
 	return (fDieTemp);
 }
 
-float ina228_shuntvoltage(uint32_t i2c_master_port)
+float ina228_shuntvoltage(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	int32_t iShuntVoltage;
 	float fShuntVoltage;
 	bool sign;
 
-	i2c_read_buf(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_VSHUNT, (uint8_t *)&iShuntVoltage, 3);
+	i2c_read_buf(i2c_master_port, i2c_slave_addr, INA228_VSHUNT, (uint8_t *)&iShuntVoltage, 3);
 	sign = iShuntVoltage & 0x80;
 	iShuntVoltage = bswap_32(iShuntVoltage & 0xFFFFFF) >> 12;
 	if (sign) iShuntVoltage += 0xFFF00000;
@@ -95,13 +96,13 @@ float ina228_shuntvoltage(uint32_t i2c_master_port)
 	return (fShuntVoltage);
 }
 
-float ina228_current(uint32_t i2c_master_port)
+float ina228_current(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	int32_t iCurrent;
 	float fCurrent;
 	bool sign;
 
-	i2c_read_buf(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_CURRENT, (uint8_t *)&iCurrent, 3);
+	i2c_read_buf(i2c_master_port, i2c_slave_addr, INA228_CURRENT, (uint8_t *)&iCurrent, 3);
 	sign = iCurrent & 0x80;
 	iCurrent = bswap_32(iCurrent & 0xFFFFFF) >> 12;
 	if (sign) iCurrent += 0xFFF00000;
@@ -110,12 +111,12 @@ float ina228_current(uint32_t i2c_master_port)
 	return (fCurrent);
 }
 
-float ina228_power(uint32_t i2c_master_port)
+float ina228_power(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	uint32_t iPower;
 	float fPower;
 
-	i2c_read_buf(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_POWER, (uint8_t *)&iPower, 3);
+	i2c_read_buf(i2c_master_port, i2c_slave_addr, INA228_POWER, (uint8_t *)&iPower, 3);
 	iPower = bswap_32(iPower & 0xFFFFFF) >> 8;
 	fPower = 3.2 * CURRENT_LSB * iPower;
 
@@ -128,12 +129,12 @@ float ina228_power(uint32_t i2c_master_port)
  * 1 W/hr = Joules / 3600
  */
 
-float ina228_energy(uint32_t i2c_master_port)
+float ina228_energy(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	uint64_t iEnergy;
 	float fEnergy;
 
-	i2c_read_buf(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_ENERGY, (uint8_t *)&iEnergy, 5);
+	i2c_read_buf(i2c_master_port, i2c_slave_addr, INA228_ENERGY, (uint8_t *)&iEnergy, 5);
 	iEnergy = bswap_64(iEnergy & 0xFFFFFFFFFF) >> 24;
 
 	fEnergy = 16 * 3.2 * CURRENT_LSB * iEnergy;
@@ -147,13 +148,13 @@ float ina228_energy(uint32_t i2c_master_port)
  * Hence Amp-Hours (Ah) = Coulombs / 3600
  */
 
-float ina228_charge(uint32_t i2c_master_port)
+float ina228_charge(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	int64_t iCharge;
 	float fCharge;
 	bool sign;
 
-	i2c_read_buf(i2c_master_port, INA228_SLAVE_ADDRESS, INA228_CHARGE, (uint8_t *)&iCharge, 5);
+	i2c_read_buf(i2c_master_port, i2c_slave_addr, INA228_CHARGE, (uint8_t *)&iCharge, 5);
 	sign = iCharge & 0x80;
 	iCharge = bswap_64(iCharge & 0xFFFFFFFFFF) >> 24;
 	if (sign) iCharge += 0xFFFFFF0000000000;

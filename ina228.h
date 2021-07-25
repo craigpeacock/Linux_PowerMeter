@@ -44,13 +44,13 @@
 #define INA228_MANUFACTURER_ID	0x3E
 #define INA228_DEVICE_ID		0x3F
 
-void ina228_init(uint32_t i2c_master_port);
-float ina228_voltage(uint32_t i2c_master_port);
-float ina228_dietemp(uint32_t i2c_master_port);
-float ina228_shuntvoltage(uint32_t i2c_master_port);
-float ina228_current(uint32_t i2c_master_port);
-float ina228_power(uint32_t i2c_master_port);
-float ina228_energy(uint32_t i2c_master_port);
-float ina228_charge(uint32_t i2c_master_port);
+void ina228_init(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina228_voltage(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina228_dietemp(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina228_shuntvoltage(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina228_current(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina228_power(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina228_energy(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina228_charge(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
 
 #endif

@@ -115,6 +115,31 @@ uint16_t i2c_read_short(uint32_t i2c_master_port, uint8_t address, uint8_t comma
 
 uint32_t i2c_read_buf(uint32_t i2c_master_port, uint8_t address, uint8_t command, uint8_t *buffer, uint8_t len)
 {
+	//uint16_t buffer;
+
+	struct i2c_msg msgs[2];
+	struct i2c_rdwr_ioctl_data msgset[1];
+
+	// Message Set 0: Write Command
+	msgs[0].addr = address;
+	msgs[0].flags = 0;
+	msgs[0].len = 1;
+	msgs[0].buf = &command;
+
+	// Message Set 1: Read len bytes
+	msgs[1].addr = address;
+	msgs[1].flags = I2C_M_RD | I2C_M_NOSTART;
+	msgs[1].len = len;
+	msgs[1].buf = buffer;
+
+	// Message Set contains 2 messages
+	msgset[0].msgs = msgs;
+	msgset[0].nmsgs = 2;
+
+	if (ioctl(i2c_master_port, I2C_RDWR, &msgset) < 0) {
+		printf("Read I2C failed\r\n");
+		exit(1);
+	}
 
 }
 
