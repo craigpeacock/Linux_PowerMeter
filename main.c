@@ -23,7 +23,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <libgen.h>
+#include <time.h>
 #include "i2c.h"
 #include "ina226.h"
 #include "ina228.h"
@@ -32,8 +34,10 @@ static void print_usage(char *prg)
 {
 	fprintf(stderr, "Usage: %s [options]\n",prg);
 	fprintf(stderr, "Options:\n");
+	fprintf(stderr, "	-l <filename> 		Log to file\n");
 	fprintf(stderr, "	-p <i2c device> 	I2C port\n");
 	fprintf(stderr, "	-a <i2c addr> 		I2C address of power meter (in hex)\n");
+	fprintf(stderr, "	-r			Reset device\n");
 	fprintf(stderr, "\n");
 }
 
@@ -42,18 +46,28 @@ int main(int argc, char **argv)
 	uint32_t hI2C;
 	char * devname = "/dev/i2c-0";
 	unsigned char i2caddr = 0x40;
+	char * logfilename = NULL;
+	bool logtofile = false;
+	bool reset = false;
 
 	printf("Power Meter\r\nhttps://github.com/craigpeacock/Linux_I2C\r\n");
 
 	int opt;
 
-	while ((opt = getopt(argc, argv, "p:a:?")) != -1) {
+	while ((opt = getopt(argc, argv, "l:p:a:r?")) != -1) {
 		switch (opt) {
+			case 'l':
+				logfilename = (char *)optarg;
+				logtofile = true;
+				break;
 			case 'p':
 				devname = (char *)optarg;
 				break;
 			case 'a':
 				i2caddr = (unsigned char) strtol((char *)optarg, NULL, 16);
+				break;
+			case 'r':
+				reset = 1;
 				break;
 
 			default:
@@ -63,12 +77,31 @@ int main(int argc, char **argv)
 		}
 	}
 
+	FILE *fhandle;
+
+	if (logtofile) {
+			printf("Logging to %s\r\n",logfilename);
+			fhandle = fopen(logfilename,"a+");
+			if (fhandle == NULL) {
+				printf("Unable to open %s for writing\r\n",logfilename);
+				exit(1);
+			}
+	}
+
 	printf("\r\nInitialising device at addr 0x%02X on %s \r\n", i2caddr, devname);
 
 	hI2C = i2c_init(devname);
 
+	if (reset) {
+		printf("Resetting device\r\n");
+		i2c_write_short(hI2C, i2caddr, INA228_CONFIG, 0x8000);	// Reset
+	}
+
 	//ina226_init(hI2C, i2caddr);
 	ina228_init(hI2C, i2caddr);
+
+	time_t now;
+	struct tm timeinfo;
 
 	do {
 
@@ -85,7 +118,30 @@ int main(int argc, char **argv)
 		printf("Charge:          %.05f Ah\r\n", ina228_charge(hI2C, i2caddr) / 3600);
 		printf("\r\n");
 
-		sleep(1);
+		if (logtofile) {
+
+			time(&now);
+			localtime_r(&now, &timeinfo);
+
+			// Timestamp
+			fprintf(fhandle,"%04d-%02d-%02d %02d:%02d:%02d,",
+					timeinfo.tm_year + 1900,
+					timeinfo.tm_mon + 1,
+					timeinfo.tm_mday,
+					timeinfo.tm_hour,
+					timeinfo.tm_min,
+					timeinfo.tm_sec);
+
+			fprintf(fhandle, "%.03f,", ina228_voltage(hI2C, i2caddr));
+			fprintf(fhandle, "%.03f,", ina228_current(hI2C, i2caddr));
+			fprintf(fhandle, "%.03f,", ina228_power(hI2C, i2caddr));
+			fprintf(fhandle, "%.05f,", ina228_energy(hI2C, i2caddr) / 3600);
+			fprintf(fhandle, "%.05f", ina228_charge(hI2C, i2caddr) / 3600);
+
+			fprintf(fhandle,"\r\n");
+			fflush(fhandle);
+		}
+		sleep(10);
 
 	} while(1);
 }
