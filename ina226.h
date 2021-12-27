@@ -33,9 +33,9 @@
 #define INA226_MANUFACTURER_ID	0xFE
 #define INA226_DIE_ID		0xFF
 
-void ina226_init(uint32_t i2c_master_port);
-float ina226_voltage(uint32_t i2c_master_port);
-float ina226_current(uint32_t i2c_master_port);
-float ina226_power(uint32_t i2c_master_port);
+void ina226_init(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina226_voltage(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina226_current(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
+float ina226_power(uint32_t i2c_master_port, uint8_t i2c_slave_addr);
 
 #endif

@@ -25,25 +25,25 @@
 #include "i2c.h"
 #include "ina226.h"
 
-void ina226_init(uint32_t i2c_master_port)
+void ina226_init(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
-	i2c_write_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_CFG_REG, 0x8000);	// Reset
-	i2c_write_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_CFG_REG, 0x4527);	// Average over 16 Samples
-	i2c_write_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_CAL_REG, 1024);	// 1A, 0.100Ohm Resistor
+	i2c_write_short(i2c_master_port, i2c_slave_addr, INA226_CFG_REG, 0x8000);	// Reset
+	i2c_write_short(i2c_master_port, i2c_slave_addr, INA226_CFG_REG, 0x4527);	// Average over 16 Samples
+	i2c_write_short(i2c_master_port, i2c_slave_addr, INA226_CAL_REG, 1024);	// 1A, 0.100Ohm Resistor
 
-	printf("Manufacturer ID:        0x%04X\r\n",i2c_read_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_MANUFACTURER_ID));
-	printf("Die ID Register:        0x%04X\r\n",i2c_read_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_DIE_ID));
-	printf("Configuration Register: 0x%04X\r\n",i2c_read_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_CFG_REG));
+	printf("Manufacturer ID:        0x%04X\r\n",i2c_read_short(i2c_master_port, i2c_slave_addr, INA226_MANUFACTURER_ID));
+	printf("Die ID Register:        0x%04X\r\n",i2c_read_short(i2c_master_port, i2c_slave_addr, INA226_DIE_ID));
+	printf("Configuration Register: 0x%04X\r\n",i2c_read_short(i2c_master_port, i2c_slave_addr, INA226_CFG_REG));
 	printf("\r\n");
 	sleep(1);
 }
 
-float ina226_voltage(uint32_t i2c_master_port)
+float ina226_voltage(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	uint16_t iBusVoltage;
 	float fBusVoltage;
 
-	iBusVoltage = i2c_read_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_BUS_VOLT_REG);
+	iBusVoltage = i2c_read_short(i2c_master_port, i2c_slave_addr, INA226_BUS_VOLT_REG);
 	//printf("iBusVoltage = %04x\r\n", iBusVoltage);
 	fBusVoltage = (iBusVoltage) * 0.00125;
 	//printf("Bus Voltage = %.2fV, ", fBusVoltage);
@@ -51,12 +51,12 @@ float ina226_voltage(uint32_t i2c_master_port)
 	return (fBusVoltage);
 }
 
-float ina226_current(uint32_t i2c_master_port)
+float ina226_current(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	int16_t iCurrent;
 	float fCurrent;
 
-	iCurrent = i2c_read_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_CURRENT_REG);
+	iCurrent = i2c_read_short(i2c_master_port, i2c_slave_addr, INA226_CURRENT_REG);
 	// Internally Calculated as Current = ((ShuntVoltage * CalibrationRegister) / 2048)
 	fCurrent = iCurrent * 0.0005;
 	//printf("Current = %.3fA\r\n", fCurrent);
@@ -64,12 +64,12 @@ float ina226_current(uint32_t i2c_master_port)
 	return (fCurrent);
 }
 
-float ina226_power(uint32_t i2c_master_port)
+float ina226_power(uint32_t i2c_master_port, uint8_t i2c_slave_addr)
 {
 	int16_t iPower;
 	float fPower;
 
-	iPower = i2c_read_short(i2c_master_port, INA226_SLAVE_ADDRESS, INA226_POWER_REG);
+	iPower = i2c_read_short(i2c_master_port, i2c_slave_addr, INA226_POWER_REG);
 	// The Power Register LSB is internally programmed to equal 25 times the programmed value of the Current_LSB
 	fPower = iPower * 0.0125;
 
