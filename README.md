@@ -1,4 +1,4 @@
-# Linux_I2C
+# Linux I2C Power Meter
 
 Usermode application to communicate with I2C sensors on Linux Embedded systems including the Beaglebone and Raspberry Pi.
 
